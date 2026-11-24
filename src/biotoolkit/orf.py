@@ -1,6 +1,6 @@
 """Find complete ATG-to-stop candidate ORFs in six reading frames."""
 from dataclasses import dataclass
-from .sequence import normalize_dna, reverse_complement, translate
+from .sequence import _translate_codon, normalize_dna, reverse_complement, translate
 
 @dataclass(frozen=True)
 class ORF:
@@ -15,8 +15,8 @@ def find_orfs(sequence: str, min_aa: int = 1) -> list[ORF]:
 
     Coordinates are 0-based, half-open on the original forward sequence,
     including the stop codon. Protein excludes the terminal stop. Frame is
-    the zero-based offset on the scanned strand. Ambiguous codons do not
-    qualify as starts/stops. Uses ATG and standard-code stops only.
+    the zero-based offset on the scanned strand. Starts must be exact ATG.
+    A codon stops an ORF if every possible reading is a standard-code stop.
     """
     if not isinstance(min_aa, int) or min_aa < 1:
         raise ValueError("min_aa must be a positive integer")
@@ -30,7 +30,7 @@ def find_orfs(sequence: str, min_aa: int = 1) -> list[ORF]:
                 codon = oriented[i:i+3]
                 if codon == "ATG":
                     starts.append(i)
-                elif codon in ("TAA", "TAG", "TGA"):
+                elif starts and _translate_codon(codon) == "*":
                     for start in starts:
                         if (i - start)//3 >= min_aa:
                             end = i+3

@@ -8,4 +8,4 @@ from .orf import ORF, find_orfs
 from .alignment import Alignment, global_align
 
 __all__ += ["FastqRecord", "read_fastq", "quality_stats", "ORF", "find_orfs", "Alignment", "global_align"]
-__version__ = "0.2.0"
+__version__ = "0.2.1"

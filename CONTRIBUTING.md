@@ -9,11 +9,4 @@ Contributions should improve scientific correctness, robustness, documentation o
 
 Do not include patient data, unpublished sequence data, access tokens or third-party code without permission. Contributions should be compatible with the MIT license. Keep changes focused and avoid trivial or repetitive submissions.
 
-## Initial roadmap
-
-- Compare quality summaries and ORF coordinates against established tools on synthetic fixtures.
-- Add optional alternative translation tables with authoritative reference fixtures.
-- Document benchmarking against established libraries on synthetic sequences.
-- Improve FASTA error messages with record and line context.
-
-These are planned improvements, not implemented features.
+To validate changes to scientific behavior, try the [reference comparisons](docs/benchmarks.md). For teaching or usability feedback, run the [tutorial](docs/tutorial.md) and include the step number and expected result in your report.

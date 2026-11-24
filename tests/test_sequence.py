@@ -7,7 +7,7 @@ class SequenceTests(unittest.TestCase):
     def test_normalize(self):
         self.assertEqual(normalize_dna("a c\nGt n"), "ACGTN")
     def test_invalid(self):
-        for seq in ("ACGU", "AC-G", "123", "?"):
+        for seq in ("ACGU", "AC-G", "123", "?", "Aſ", "AK", "aß"):
             with self.subTest(seq=seq), self.assertRaises(ValueError):
                 normalize_dna(seq)
     def test_gc(self):

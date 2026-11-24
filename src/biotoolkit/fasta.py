@@ -20,11 +20,10 @@ def read_fasta(lines: Iterable[str]) -> Iterator[FastaRecord]:
 
     def record() -> FastaRecord:
         assert header is not None
-        seq = normalize_dna("".join(chunks))
-        if not seq:
+        if not chunks:
             raise ValueError(f"Empty sequence for {header!r}")
         parts = header.split(maxsplit=1)
-        return FastaRecord(parts[0], parts[1] if len(parts) > 1 else "", seq)
+        return FastaRecord(parts[0], parts[1] if len(parts) > 1 else "", "".join(chunks))
 
     for n, line in enumerate(lines, 1):
         line = line.strip()
@@ -40,7 +39,10 @@ def read_fasta(lines: Iterable[str]) -> Iterator[FastaRecord]:
         else:
             if header is None:
                 raise ValueError(f"Sequence before FASTA header at line {n}")
-            chunks.append(line)
+            try:
+                chunks.append(normalize_dna(line))
+            except ValueError as exc:
+                raise ValueError(f"FASTA line {n} for {header!r}: {exc}") from exc
     if header is None:
         raise ValueError("No FASTA records found")
     yield record()

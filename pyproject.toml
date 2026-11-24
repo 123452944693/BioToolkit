@@ -1,18 +1,27 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "biotoolkit-sequences"
-version = "0.2.0"
+dynamic = ["version"]
 description = "Small, transparent DNA sequence utilities for learning and reproducible analysis"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = ["Programming Language :: Python :: 3", "Topic :: Scientific/Engineering :: Bio-Informatics"]
 
 [project.scripts]
 biotoolkit = "biotoolkit.cli:main"
+
+[project.urls]
+Repository = "https://github.com/123452944693/BioToolkit"
+Issues = "https://github.com/123452944693/BioToolkit/issues"
+Tutorial = "https://github.com/123452944693/BioToolkit/blob/main/docs/tutorial.md"
+
+[tool.setuptools.dynamic]
+version = {attr = "biotoolkit.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

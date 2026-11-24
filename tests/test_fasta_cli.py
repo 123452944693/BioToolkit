@@ -2,7 +2,7 @@ import unittest
 from io import StringIO
 from contextlib import redirect_stdout, redirect_stderr
 from unittest.mock import patch
-from biotoolkit import read_fasta
+from biotoolkit import __version__, read_fasta
 from biotoolkit.cli import main
 
 class FastaTests(unittest.TestCase):
@@ -14,6 +14,9 @@ class FastaTests(unittest.TestCase):
             with self.subTest(data=data), self.assertRaises(ValueError): list(read_fasta(StringIO(data)))
     def test_duplicate_ids(self):
         self.assertEqual(len(list(read_fasta(StringIO(">a\nA\n>a\nT\n")))), 2)
+    def test_invalid_sequence_reports_line_and_record(self):
+        with self.assertRaisesRegex(ValueError, "FASTA line 3 for 'sample': Invalid DNA"):
+            list(read_fasta(StringIO(">sample\nAC\nX\n")))
 
 class CliTests(unittest.TestCase):
     def run_cli(self, args, data):
@@ -34,3 +37,9 @@ class CliTests(unittest.TestCase):
         code, out, err = self.run_cli(["stats","-"], ">a\nACZ\n")
         self.assertEqual(code,1)
         self.assertIn("Invalid DNA",err)
+    def test_version(self):
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit) as caught:
+            main(["--version"])
+        self.assertEqual(caught.exception.code, 0)
+        self.assertEqual(out.getvalue(), f"biotoolkit {__version__}\n")
