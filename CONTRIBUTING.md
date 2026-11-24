@@ -11,7 +11,7 @@ Do not include patient data, unpublished sequence data, access tokens or third-p
 
 ## Initial roadmap
 
-- Add streaming gzip input support and tests.
+- Compare quality summaries and ORF coordinates against established tools on synthetic fixtures.
 - Add optional alternative translation tables with authoritative reference fixtures.
 - Document benchmarking against established libraries on synthetic sequences.
 - Improve FASTA error messages with record and line context.
