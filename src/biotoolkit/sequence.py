@@ -1,8 +1,10 @@
 """DNA utilities. Ambiguity codes follow the IUPAC nucleotide alphabet."""
 from collections import Counter
+from functools import lru_cache
 from itertools import product
 
 IUPAC = {"A":"A", "C":"C", "G":"G", "T":"T", "R":"AG", "Y":"CT", "S":"CG", "W":"AT", "K":"GT", "M":"AC", "B":"CGT", "D":"AGT", "H":"ACT", "V":"ACG", "N":"ACGT"}
+_VALID_SYMBOLS = frozenset(IUPAC) | frozenset(base.lower() for base in IUPAC)
 _COMPLEMENT = str.maketrans("ACGTRYSWKMBDHVN", "TGCAYRSWMKVHDBN")
 # NCBI translation table 1, codon order T,C,A,G in each position.
 _CODONS = dict(zip(("".join(c) for c in product("TCAG", repeat=3)),
@@ -11,24 +13,32 @@ _CODONS = dict(zip(("".join(c) for c in product("TCAG", repeat=3)),
 
 def normalize_dna(sequence: str) -> str:
     """Uppercase DNA and remove whitespace; reject non-IUPAC symbols."""
-    seq = "".join(sequence.split()).upper()
-    invalid = sorted(set(seq) - IUPAC.keys())
+    seq = "".join(sequence.split())
+    invalid = sorted(set(seq) - _VALID_SYMBOLS)
     if invalid:
-        raise ValueError("Invalid DNA symbols: " + ", ".join(invalid))
-    return seq
+        raise ValueError("Invalid DNA symbols: " + ", ".join(map(repr, invalid)))
+    return seq.upper()
+
+
+def _gc_percent(counts: Counter) -> float | None:
+    denominator = sum(counts[base] for base in "ACGT")
+    return 100 * (counts["G"] + counts["C"]) / denominator if denominator else None
 
 
 def gc_content(sequence: str) -> float | None:
     """GC percentage among unambiguous A/C/G/T bases; None if none exist."""
-    seq = normalize_dna(sequence)
-    counts = Counter(seq)
-    denominator = sum(counts[b] for b in "ACGT")
-    return 100 * (counts["G"] + counts["C"]) / denominator if denominator else None
+    return _gc_percent(Counter(normalize_dna(sequence)))
 
 
 def reverse_complement(sequence: str) -> str:
     """Return the reverse complement, preserving IUPAC ambiguity codes."""
     return normalize_dna(sequence).translate(_COMPLEMENT)[::-1]
+
+
+@lru_cache(maxsize=len(IUPAC) ** 3)
+def _translate_codon(codon: str) -> str:
+    residues = {_CODONS["".join(bases)] for bases in product(*(IUPAC[b] for b in codon))}
+    return next(iter(residues)) if len(residues) == 1 else "X"
 
 
 def translate(sequence: str, frame: int = 0, *, partial: str = "error") -> str:
@@ -46,11 +56,7 @@ def translate(sequence: str, frame: int = 0, *, partial: str = "error") -> str:
     remainder = len(seq) % 3
     if remainder and partial == "error":
         raise ValueError("Incomplete trailing codon; use partial='trim' to discard it")
-    result = []
-    for i in range(0, len(seq) - remainder, 3):
-        residues = {_CODONS["".join(c)] for c in product(*(IUPAC[b] for b in seq[i:i+3]))}
-        result.append(next(iter(residues)) if len(residues) == 1 else "X")
-    return "".join(result)
+    return "".join(_translate_codon(seq[i:i + 3]) for i in range(0, len(seq) - remainder, 3))
 
 
 def sequence_stats(sequence: str) -> dict:
@@ -58,4 +64,4 @@ def sequence_stats(sequence: str) -> dict:
     seq = normalize_dna(sequence)
     counts = Counter(seq)
     bases = {b: counts[b] for b in "ACGT"}
-    return {"length": len(seq), **bases, "ambiguous": len(seq) - sum(bases.values()), "gc_percent": gc_content(seq)}
+    return {"length": len(seq), **bases, "ambiguous": len(seq) - sum(bases.values()), "gc_percent": _gc_percent(counts)}

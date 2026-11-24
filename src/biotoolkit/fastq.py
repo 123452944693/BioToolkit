@@ -1,5 +1,6 @@
 """Strict four-line DNA FASTQ parsing with Phred+33 quality scores."""
 from dataclasses import dataclass
+from itertools import islice
 from typing import Iterable, Iterator
 from .sequence import normalize_dna
 
@@ -21,15 +22,18 @@ def read_fastq(lines: Iterable[str]) -> Iterator[FastqRecord]:
         if not header.startswith("@") or not header[1:].strip():
             raise ValueError(f"FASTQ record {number}: invalid header")
         identifier = header[1:].split()[0]
-        try:
-            seq, plus, quality = (next(stream).rstrip("\r\n") for _ in range(3))
-        except (StopIteration, RuntimeError) as exc:
-            raise ValueError(f"FASTQ record {number}: truncated record") from exc
+        body = [line.rstrip("\r\n") for line in islice(stream, 3)]
+        if len(body) != 3:
+            raise ValueError(f"FASTQ record {number}: truncated record")
+        seq, plus, quality = body
         if not plus.startswith("+") or (plus[1:].strip() and plus[1:].split()[0] != identifier):
             raise ValueError(f"FASTQ record {number}: invalid plus line")
         if not seq or any(c.isspace() for c in seq):
             raise ValueError(f"FASTQ record {number}: empty or whitespace-containing sequence")
-        seq = normalize_dna(seq)
+        try:
+            seq = normalize_dna(seq)
+        except ValueError as exc:
+            raise ValueError(f"FASTQ record {number} ({identifier!r}): {exc}") from exc
         if len(seq) != len(quality) or any(not 33 <= ord(c) <= 126 for c in quality):
             raise ValueError(f"FASTQ record {number}: invalid quality length or symbols")
         yield FastqRecord(identifier, seq, quality)

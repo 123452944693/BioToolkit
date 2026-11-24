@@ -4,14 +4,45 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        os: [ubuntu-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        include:
+          - os: windows-latest
+            python-version: '3.14'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -v
+      - run: python -m biotoolkit --version
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check --strict dist/*
+      - name: Smoke-test the installed wheel
+        run: |
+          python -m venv "$RUNNER_TEMP/biotoolkit-wheel"
+          "$RUNNER_TEMP/biotoolkit-wheel/bin/python" -m pip install --no-deps dist/*.whl
+          "$RUNNER_TEMP/biotoolkit-wheel/bin/biotoolkit" --version
+          "$RUNNER_TEMP/biotoolkit-wheel/bin/biotoolkit" stats examples/sample.fasta
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: biotoolkit-distributions
+          path: dist/
+          if-no-files-found: error
