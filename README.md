@@ -85,6 +85,14 @@ python -m unittest discover -s tests -v
 
 Tests cover all 64 standard codons, ambiguity handling, invalid inputs, FASTA parsing command-line behavior, FASTQ quality, gzip input, ORF coordinates and global alignment. A GitHub Actions workflow runs these tests on Python 3.10–3.13 when configured in a repository with Actions enabled.
 
+## Tutorial
+
+Try the [hands-on sequence analysis tutorial](docs/tutorial.md) with synthetic FASTA and FASTQ files, worked calculations, and expected results.
+
+## Development transparency
+
+The initial implementation, documentation and automated tests were produced with substantial ChatGPT assistance and published at the repository owner's direction. GitHub CI verifies the included tests; it does not establish independent scientific validation, adoption or clinical suitability. The owner and any future contributors should independently review and understand changes before relying on them.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Meaningful bug reports, reproducible test cases and scientifically justified improvements are welcome.
